@@ -1,19 +1,21 @@
 const express = require('express');
 const router = express.Router();
 const Note = require('../models/Note');
+const auth = require('../middleware/auth');
 
-router.get('/', async (req, res) => {
+router.get('/', auth, async (req, res) => {
   try {
-    const notes = await Note.find();
+    const notes = await Note.find({ userId: req.user._id });
     res.json(notes);
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 });
 
-router.post('/', async (req, res) => {
+router.post('/', auth, async (req, res) => {
   const note = new Note({
-    content: req.body.content
+    content: req.body.content,
+    userId: req.user._id
   });
 
   try {
@@ -24,10 +26,10 @@ router.post('/', async (req, res) => {
   }
 });
 
-router.patch('/:id', async (req, res) => {
+router.patch('/:id', auth, async (req, res) => {
   try {
     const note = await Note.findById(req.params.id);
-    if (note == null) {
+    if (note == null || note.userId.toString() !== req.user._id) {
       return res.status(404).json({ message: 'Cannot find note' });
     }
 
@@ -42,10 +44,10 @@ router.patch('/:id', async (req, res) => {
   }
 });
 
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', auth, async (req, res) => {
   try {
     const note = await Note.findById(req.params.id);
-    if (note == null) {
+    if (note == null || note.userId.toString() !== req.user._id) {
       return res.status(404).json({ message: 'Cannot find note' });
     }
 
